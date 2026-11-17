@@ -1,0 +1,15 @@
+<Window x:Class="RevitBatchNWCExport.UI.ExportProgressWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="NWC Экспорт"
+        Width="500" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" Topmost="True"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="16">
+        <TextBlock x:Name="CounterText" FontWeight="SemiBold" Text="Подготовка…" />
+        <ProgressBar x:Name="Bar" Height="16" Margin="0,10,0,8" Minimum="0" />
+        <TextBlock x:Name="CurrentText" Foreground="#616161" TextTrimming="CharacterEllipsis" />
+        <Button x:Name="StopButton" Content="Остановить" HorizontalAlignment="Right" Padding="12,4" MinWidth="90"
+                Margin="0,12,0,0" Click="Stop_Click" />
+    </StackPanel>
+</Window>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Application">
+    <Name>RevitBatchNWCExport</Name>
+    <Assembly>RevitBatchNWCExport\RevitBatchNWCExport.dll</Assembly>
+    <AddInId>dd6dd7f4-9fe8-4bdc-8ecb-f4d579759c62</AddInId>
+    <FullClassName>RevitBatchNWCExport.Application</FullClassName>
+    <VendorId>RAC</VendorId>
+    <VendorDescription>RevitBatchNWCExport, https://github.com/roshior-a/RevitBatchNWCExport</VendorDescription>
+  </AddIn>
+</RevitAddIns>

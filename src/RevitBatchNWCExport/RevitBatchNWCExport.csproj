@@ -1,0 +1,108 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Одна сборка на каждую версию Revit: конфигурации «Debug R22» … «Release R27».
+    Debug — после сборки копирует плагин в %AppData%\Autodesk\Revit\Addins\<год>.
+    Release — собирает готовую папку dist\Revit<год>.
+  -->
+
+  <PropertyGroup>
+    <Configurations>Debug R22;Debug R23;Debug R24;Debug R25;Debug R26;Debug R27;Release R22;Release R23;Release R24;Release R25;Release R26;Release R27</Configurations>
+    <Configuration Condition="'$(Configuration)' == ''">Debug R27</Configuration>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <RevitVersion Condition="$(Configuration.EndsWith('R22'))">2022</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R23'))">2023</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R24'))">2024</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R25'))">2025</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R26'))">2026</RevitVersion>
+    <RevitVersion Condition="$(Configuration.EndsWith('R27'))">2027</RevitVersion>
+    <RevitVersion Condition="'$(RevitVersion)' == ''">2027</RevitVersion>
+    <IsDebugBuild>$(Configuration.StartsWith('Debug'))</IsDebugBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <TargetFramework Condition="$(RevitVersion) &lt; 2025">net48</TargetFramework>
+    <TargetFramework Condition="$(RevitVersion) &gt;= 2025 And $(RevitVersion) &lt; 2027">net8.0-windows</TargetFramework>
+    <TargetFramework Condition="$(RevitVersion) &gt;= 2027">net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <PlatformTarget>x64</PlatformTarget>
+    <RootNamespace>RevitBatchNWCExport</RootNamespace>
+    <AssemblyName>RevitBatchNWCExport</AssemblyName>
+    <Version>0.1.0</Version>
+    <Product>RevitBatchNWCExport</Product>
+    <Description>Пакетный экспорт моделей Revit в NWC</Description>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <!-- Revit сам загружает свои сборки -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsDebugBuild)' == 'true'">
+    <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
+    <Optimize>false</Optimize>
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(IsDebugBuild)' != 'true'">
+    <DefineConstants>$(DefineConstants);TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+  </PropertyGroup>
+
+  <!-- REVIT2025, REVIT2024_OR_GREATER и т. п. для отличий API между версиями -->
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REVIT$(RevitVersion)</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2023">$(DefineConstants);REVIT2023_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2024">$(DefineConstants);REVIT2024_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2025">$(DefineConstants);REVIT2025_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2026">$(DefineConstants);REVIT2026_OR_GREATER</DefineConstants>
+    <DefineConstants Condition="$(RevitVersion) &gt;= 2027">$(DefineConstants);REVIT2027_OR_GREATER</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Nice3point.Revit.Api.RevitAPIUI" Version="$(RevitVersion).*" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="RevitBatchNWCExport.addin" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- Debug: установка в папку надстроек текущего пользователя -->
+  <Target Name="DeployToRevit" AfterTargets="Build" Condition="'$(IsDebugBuild)' == 'true'">
+    <PropertyGroup>
+      <AddinsDir>$(AppData)\Autodesk\Revit\Addins\$(RevitVersion)\</AddinsDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <DeployFiles Include="$(OutputPath)*.dll;$(OutputPath)*.pdb" />
+    </ItemGroup>
+    <Copy SourceFiles="$(OutputPath)RevitBatchNWCExport.addin" DestinationFolder="$(AddinsDir)" ContinueOnError="true" />
+    <Copy SourceFiles="@(DeployFiles)" DestinationFolder="$(AddinsDir)RevitBatchNWCExport\" ContinueOnError="true" />
+    <Message Importance="high" Text="RevitBatchNWCExport установлен в $(AddinsDir)" />
+  </Target>
+
+  <!-- Release: готовая папка для раздачи -->
+  <Target Name="PackDist" AfterTargets="Build" Condition="'$(IsDebugBuild)' != 'true'">
+    <PropertyGroup>
+      <DistDir>$(MSBuildThisFileDirectory)..\..\dist\Revit$(RevitVersion)\</DistDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <DistFiles Include="$(OutputPath)*.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="$(OutputPath)RevitBatchNWCExport.addin" DestinationFolder="$(DistDir)" />
+    <Copy SourceFiles="@(DistFiles)" DestinationFolder="$(DistDir)RevitBatchNWCExport\" />
+    <Message Importance="high" Text="RevitBatchNWCExport собран в $(DistDir)" />
+  </Target>
+
+</Project>
